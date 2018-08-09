@@ -40,11 +40,12 @@ const STON_URL = 'https://ston.datasektionen.se'
       let body
       if (!n0llan.longitude || !n0llan.latitude) {
         moreinfo = true
-        { body } = await geoClient.forwardGeocode({
+        const result = await geoClient.forwardGeocode({
           query: n0llan.street,
           proximity: [ 59.348135, 18.071440 ],
           types: [ 'address' ]
         }).send()
+        body = result.body
         console.log(body.features)
       }
 
