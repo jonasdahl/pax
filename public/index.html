@@ -2,135 +2,169 @@
 <html>
 <head>
     <title></title>
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.47.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.47.0/mapbox-gl.css' rel='stylesheet' />
-    <link href='//aurora.datasektionen.se' rel='stylesheet' />
-    <link href='/style.css' rel='stylesheet' />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.47.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v0.47.0/mapbox-gl.css" rel="stylesheet" />
+    <link href="https://aurora.datasektionen.se" rel="stylesheet" />
+    <link href="/style.css" rel="stylesheet" />
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
 <script>
 </script>
 </head>
 <body>
-    <div id='map'></div>
+    <div id="application" class="application cerise">
+    <div id="methone-container-replace"></div>
+    <script type="text/javascript">
+        window.methone_conf = {
+            system_name: "Pax",
+            color_scheme: "cerise",
+            login_text: "Ladda om",
+            login_href: "/",
+            links: []
+        }
+    </script>
+    <script src="//methone.datasektionen.se/bar.js"></script>
+    
+    <div id="a">
+        <div id="list">
+            <h2>Dina nØllan</h2>
+            <ul>
+                <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && n.paxad.emails === userEmail)">
+                    <button class="paxa" @click="socket.emit('avpaxa', { id: person.id })">Avpaxa</button>
+                    <h1 v-html="person.name"></h1>
+                    <a title="Google Maps" target="_blank" v-bind:href="'https://www.google.com/maps/place/' + person.rawAddress.street + ',+' + person.rawAddress.zip + '+' + person.rawAddress.city" class="address">
+                        <i class="fa fa-crosshairs"></i>
+                        <span v-html="person.rawAddress.street"></span><br>
+                        <span v-html="person.rawAddress.zip"></span>
+                        <span v-html="person.rawAddress.city"></span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    </div>
+    <div id="map"></div>
+    <script type="text/x-template" id="popup-template">
+        <div class="popup">
+            <h2 v-html="n0llan.name"></h2>
+            <p class="address">
+                <span v-html="n0llan.rawAddress.street"></span><br />
+                <span v-html="n0llan.rawAddress.zip"></span>
+                <span v-html="n0llan.rawAddress.city"></span>
+            </p>
+            <button v-if="!n0llan.paxad" class="paxa" @click="paxa">Paxa</button>
+            <button v-if="n0llan.paxad && n0llan.paxad.emails === userEmail" class="paxa" @click="avpaxa">Avpaxa</button>
+            <p class="paxare" v-if="n0llan.paxad" v-html="'Paxad av ' + n0llan.paxad.first_name + ' ' + n0llan.paxad.last_name"></p>
+        </div>
+    </script>
     <script>
-        const socket = io({
-            query: {
-                token: location.search.match(/\?(.*&)?token=(.*)\&?/)[2]
-            }
-        })
-
-        const content = {}
-        const popups = {}
-        const markers = {}
-
-        let map
-
-        const markerColor = ({ paxad }) => paxad ? '#F00' : '#0F0'
-
-        socket.on('error', a => console.error(a))
-        socket.on('ERROR', a => console.error(a))
-
-        socket.on('mapToken', token => {
-            mapboxgl.accessToken = token
-            map = new mapboxgl.Map({
-                container: 'map',
-                center: [ 18.071440, 59.348135 ],
-                zoom: 11,
-                style: 'mapbox://styles/mapbox/streets-v9'
-            })
-        })
-
-        socket.on('n0llan', n0llan => {
-            n0llan.forEach(n0llan => {
-                const uid = n0llan.uid
-                const lngLat = n0llan.addresses[n0llan.index || 0].center
-
-                // Who need templates when you can do this
-                const popup = document.createElement('div')
-
-                const name = document.createElement('h1')
-                name.appendChild(document.createTextNode(uid))
-
-                const address = document.createElement('p')
-                address.appendChild(document.createTextNode(n0llan.rawAddress))
-
-                const paxare = document.createElement('p')
-                paxare.style.display = 'none'
-                paxare.appendChild(document.createTextNode('Redan paxad av: '))
-                paxare.appendChild(document.createTextNode(n0llan.paxad && n0llan.paxad.first_name))
-                paxare.appendChild(document.createTextNode(' '))
-                paxare.appendChild(document.createTextNode(n0llan.paxad && n0llan.paxad.last_name))
-                paxare.appendChild(document.createTextNode(' ('))
-                paxare.appendChild(document.createTextNode(n0llan.paxad && n0llan.paxad.emails))
-                paxare.appendChild(document.createTextNode(')'))
-
-                if(n0llan.paxad) {
-                    paxare.style.display = 'block'
+        window.PopupContainer = Vue.component('PopupContainer', {
+            data() {
+                return {
+                    userEmail: '',
+                    n0llan: {}
                 }
-
-                const paxa = document.createElement('button')
-                paxa.appendChild(document.createTextNode('paxa'))
-                paxa.onclick = e => socket.emit('paxa', { uid })
-
-                const avpaxa = document.createElement('button')
-                avpaxa.appendChild(document.createTextNode('avpaxa'))
-                avpaxa.onclick = e => socket.emit('avpaxa', { uid })
-
-                const alternatives = document.createElement('select')
-                n0llan.addresses.forEach((address, index) => {
-                    const option = document.createElement('option')
-                    option.appendChild(document.createTextNode(address.place_name))
-                    option.value = index
-                    alternatives.appendChild(option)
-                })
-
-                alternatives.onchange = e =>
-                    socket.emit('fixa', { uid, index: parseInt(e.target.value) })
-
-
-                popup.appendChild(name)
-                popup.appendChild(address)
-                popup.appendChild(paxare)
-                popup.appendChild(paxa)
-                popup.appendChild(avpaxa)
-                popup.appendChild(alternatives)
-
-                content[uid] = popup
-
-                popups[uid] = new mapboxgl.Popup()
-                    .setDOMContent(popup)
-                    .addTo(map)
-
-                markers[uid] = new mapboxgl.Marker({
-                    color: markerColor(n0llan)
-                })
-                    .setLngLat(lngLat)
-                    .setPopup(popups[uid])
-                    .addTo(map)
-            })
+            },
+            created() {
+                console.log('created')
+            },
+            methods: {
+                paxa: function() {
+                    this.$emit('paxa', this.n0llan)
+                    console.log('paxa')
+                },
+                avpaxa: function() {
+                    this.$emit('avpaxa', this.n0llan)
+                    console.log('avpaxa')
+                }
+            },
+            template: '#popup-template'
         })
 
-        socket.on('update', n0llan => {
-            const marker = markers[n0llan.uid]
-            marker.getElement()
-                .childNodes[0]
-                .childNodes[0]
-                .childNodes[1]
-                .setAttributeNS(null, 'fill', markerColor(n0llan))
+        const app = new Vue({
+            el: '#a',
+            data: {
+                n0llan: {},
+                userEmail: '',
+                socket: io({
+                    query: {
+                        token: location.search.match(/\?(.*&)?token=(.*)\&?/)[2]
+                    }
+                }),
+                map: undefined, 
+                popups: {},
+                markers: {} 
+            },
+            created: function() {
+                this.socket.on('error', a => console.error(a))
+                this.socket.on('ERROR', a => console.error(a))
+                this.socket.on('userEmail', ue => this.userEmail = ue)
+                this.socket.on('mapToken', token => {
+                    mapboxgl.accessToken = token
+                    this.map = new mapboxgl.Map({
+                        container: 'map',
+                        center: [ 18.071440, 59.348135 ],
+                        zoom: 11,
+                        style: 'mapbox://styles/mapbox/streets-v9'
+                    })
 
-            marker.setLngLat(n0llan.features[n0llan.index || 0].center)
+                    console.log(mapboxgl, map, token)
+                })
+                this.socket.on('n0llan', n0llan => {
+                    n0llan.forEach(n0llan => {
+                        this.update(n0llan)
+                    })
+                })
+                this.socket.on('update', n0llan => {
+                    this.update(n0llan)
+                })
+            },
+            methods: {
+                update: function (n0llan) {
+                    console.log("Updating", n0llan)
 
-            const paxare = content[n0llan.uid].childNodes[2]
-            if(n0llan.paxad) {
-                paxare.childNodes[1].innerText = n0llan.paxad.first_name
-                paxare.childNodes[3].innerText = n0llan.paxad.last_name
-                paxare.childNodes[5].innerText = n0llan.paxad.emails
-                paxare.style.display = 'block'
-            } else {
-                paxare.style.display = 'none'
+                    // Calculate position
+                    const coordinates = n0llan.coordinates.longitude && n0llan.coordinates.latitude ? [n0llan.coordinates.longitude, n0llan.coordinates.latitude] : n0llan.addresses[n0llan.index || 0].center
+
+                    const n = this.n0llan
+                    n[n0llan.id] = n0llan
+                    this.n0llan = n
+                    this.$forceUpdate()
+                    console.log(this.n0llan)
+                    const markerColor = (n0llan) => !n0llan.paxad ? '#ee2a7b' : '#dddddd'
+
+                    const p = new window.PopupContainer()
+                    p.n0llan = n0llan
+                    p.userEmail = this.userEmail
+                    p.$on('paxa', x => this.socket.emit('paxa', { id: x.id }))
+                    p.$on('avpaxa', x => this.socket.emit('avpaxa', { id: x.id }))
+                    p.$mount()
+
+                    if (this.popups[n0llan.id]) {
+                        this.popups[n0llan.id].setDOMContent(p.$el)   
+                    } else {
+                        this.popups[n0llan.id] = new mapboxgl.Popup().setDOMContent(p.$el).addTo(this.map)
+                    }
+
+                    if (this.markers[n0llan.id]) {
+                        this.markers[n0llan.id]
+                        .setLngLat(coordinates)
+                        this.markers[n0llan.id].getElement()
+                        .childNodes[0]
+                        .childNodes[0]
+                        .childNodes[1]
+                        .setAttributeNS(null, 'fill', markerColor(n0llan))
+                    } else {
+                        this.markers[n0llan.id] = new mapboxgl.Marker({
+                            color: markerColor(n0llan)
+                        })
+                        .setLngLat(coordinates)
+                        .setPopup(this.popups[n0llan.id])
+                        .addTo(this.map)
+                    }
+                }
             }
         })
-
     </script>
 </body>
 </html>

@@ -10,7 +10,7 @@ html, body {
 
 .mapboxgl-popup-close-button, .mapboxgl-popup-close-button:hover {
 	box-shadow: none;
-	padding: 0;
+	padding: 20px;
 }
 
 .mapboxgl-map, .mapboxgl-marker, .mapboxgl-popup {
@@ -19,4 +19,85 @@ html, body {
 
 select {
 	display: block;
+}
+
+.popup {
+	padding: 20px;
+	font-family: 'Lato', sans-serif;
+}
+.popup h2 {
+	font-size: 1.75em;
+	margin: 0;
+	padding: 0 0 10px 0;
+}
+.popup .address {
+	font-size: 1.2em;
+	margin: 5px 120px 0 0;
+}
+.popup button.paxa {
+	float: right;
+	background: #ee2a7b !important;
+	color: #fff;
+	font-weight: bold;
+	margin-top: -40px;
+	height: 40px;
+	width: 100px;
+}
+.popup .paxare {
+	margin: 0;
+	padding: 5px 0 0;
+}
+
+#list {
+	width: 400px;
+	position: fixed;
+	left: 0;
+	top: 50px;
+	padding: 80px 20px 20px;
+	bottom: 0;
+	z-index: 1;
+	background: rgba(0,0,0,0.1);
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	overflow-y: auto;
+}
+#list h2 {
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	background: #fff;
+	text-align: center;
+	font-weight: bold;
+	font-size: 1.5em;
+	left: 0;
+	top: 50px;
+	margin: 0;
+	position: fixed;
+	width: 400px;
+	z-index: 2;
+	height: 80px;
+	line-height: 80px;
+}
+
+ul {
+	padding: 0;
+	margin: 0;
+}
+.card {
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	background: #fff;
+	list-style-type: none; 
+	padding: 0;
+	margin: 0;
+	padding: 20px;
+	margin: 20px 0;
+	border-radius: 3px;
+}
+.card h1 {
+	font-size: 1.5em;
+	font-weight: bold;
+	margin: 0 0 10px;
+	padding: 0;
+}
+.card button {
+	background: #ee2a7b !important;
+	color: #fff;
+	float: right;
 }
