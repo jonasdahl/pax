@@ -20,7 +20,7 @@ const geoClient = require('@mapbox/mapbox-sdk/services/geocoding')({ accessToken
 
 const LOGIN_URL = 'https://login2.datasektionen.se'
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/pax2'
-const STON_URL = 'http://ston.local/'//'https://ston.datasektionen.se'
+const STON_URL = 'https://ston.datasektionen.se'
 
 ;(async function() {
   try {
