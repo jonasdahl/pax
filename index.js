@@ -31,14 +31,10 @@ const STON_URL = 'https://ston.datasektionen.se'
     const res = await fetch(`${STON_URL}/api/pax?api_key=${process.env.STON_API_KEY}`)
     const data = await res.json()
 
-    var i = 9;
     for (const n0llan of data) {
       //https://github.com/mapbox/mapbox-sdk-js/blob/master/docs/services.md#forwardgeocode
       if (!n0llan.street) {
         continue;
-      }
-      if (i-- < 0) {
-        return;
       }
 
       let moreinfo = false
