@@ -37,10 +37,10 @@ const STON_URL = 'https://ston.datasektionen.se'
         continue;
       }
 
-      let moreinfo = false
+      let body
       if (!n0llan.longitude || !n0llan.latitude) {
         moreinfo = true
-        const { body } = await geoClient.forwardGeocode({
+        { body } = await geoClient.forwardGeocode({
           query: n0llan.street,
           proximity: [ 59.348135, 18.071440 ],
           types: [ 'address' ]
@@ -61,7 +61,7 @@ const STON_URL = 'https://ston.datasektionen.se'
               longitude: n0llan.longitude,
               latitude: n0llan.latitude
             },
-            addresses: moreinfo ? body.features : undefined,
+            addresses: body ? body.features : undefined,
           }
         },
         { upsert: true }
