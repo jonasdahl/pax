@@ -8,32 +8,26 @@
     <link href="/style.css" rel="stylesheet" />
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script>
 </script>
 </head>
 <body>
+    <div style="height: 100%">
+        <div id="map"></div>
+    </div>
+
     <div id="application" class="application cerise">
-        <div id="methone-container-replace"></div>
-        <script type="text/javascript">
-            window.methone_conf = {
-                system_name: "Pax",
-                color_scheme: "cerise",
-                login_text: "Ladda om",
-                login_href: "/",
-                links: []
-            }
-        </script>
-        <script src="//methone.datasektionen.se/bar.js"></script>
-        
         <div id="a">
             <div id="profile" v-if="state !== 0 && state !== 2">
                 Paxar som <b v-html="alias || userEmail"></b><br>
                 <button class="paxa" @click="state = 2; alias = ''">Byt alias</button>
             </div>
-            <div id="list" v-if="state !== 0 && state !== 2">
+            <div id="list" :class="{ expanded: menuExpanded }" v-if="state !== 0 && state !== 2">
                 <h2>Dina nØllan, <b v-html="alias || userEmail"></b></h2>
+                <button class="close-button" @click="menuExpanded = !menuExpanded"><i class="fa fa-chevron-down"></i></button>
                 <ul>
-                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && (n.paxad.emails === userEmail || n.paxad.alias === alias))">
+                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && ((n.paxad.emails === userEmail && !alias) || n.paxad.alias === alias))">
                         <button class="paxa" @click="avpaxa(person)">Avpaxa</button>
                         <h1 v-html="person.name"></h1>
                         <a title="Google Maps" target="_blank" v-bind:href="'https://www.google.com/maps/place/' + person.rawAddress.street + ',+' + person.rawAddress.zip + '+' + person.rawAddress.city" class="address">
@@ -50,24 +44,23 @@
             </div>
             <div class="overlay" v-if="state === 0">
                 <div class="dialog">
-                    <h3>Hur vill du paxa?</h3>
-                    <button @click="state = 1">Med KTH-kontot <span v-html="userEmail"></span></button>
-                    <button @click="state = 2">Med ett alias</button>
+                    <div class="dialog-container">
+                        <h3>Hur vill du paxa?</h3>
+                        <button @click="state = 1">Med KTH-kontot <span v-html="userEmail"></span></button>
+                        <button @click="state = 2">Med ett alias</button>
+                    </div>
                 </div>
             </div>
             <div class="overlay" v-if="state === 2">
                 <div class="dialog">
-                    <h3>Ange ett alias</h3>
-                    <input type="text" v-model="alias" @keypress.enter="state = 3" />
-                    <button @click="state = 3">Starta!</button>
+                    <div class="dialog-container">
+                        <h3>Ange ett alias</h3>
+                        <input type="text" v-model="alias" @keypress.enter="state = 3" />
+                        <button @click="state = 3">Starta!</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-
-    <div style="padding-top:50px;height:100%;margin-top:-50px;">
-        <div id="map"></div>
     </div>
 
     <template id="popup-container">
@@ -79,7 +72,7 @@
                 <span v-html="n0llan.rawAddress.city"></span>
             </p>
             <button v-if="!n0llan.paxad" class="paxa" @click="paxa">Paxa</button>
-            <button v-if="n0llan.paxad && n0llan.paxad.emails === userEmail" class="paxa" @click="avpaxa">Avpaxa</button>
+            <button v-if="false || (n0llan.paxad && ((n0llan.paxad.emails === userEmail && !alias) || n0llan.paxad.alias === alias))" class="paxa" @click="avpaxa">Avpaxa</button>
             <p class="paxare" v-if="n0llan.paxad" v-html="'Paxad av ' + (n0llan.paxad.alias || (n0llan.paxad.first_name + ' ' + n0llan.paxad.last_name))"></p>
         </div>
     </template>
@@ -89,7 +82,8 @@
             data() {
                 return {
                     userEmail: '',
-                    n0llan: {}
+                    n0llan: {},
+                    alias: '',
                 }
             },
             methods: {
@@ -117,7 +111,8 @@
                 map: undefined, 
                 popups: {},
                 markers: {},
-                state: 0
+                state: 0,
+                menuExpanded: false
             },
             created: function() {
                 this.socket.on('error', a => console.error(a))
@@ -164,11 +159,12 @@
                     const p = new window.PopupContainer()
                     p.n0llan = n0llan
                     p.userEmail = this.userEmail
+                    p.alias = this.alias
                     p.$on('paxa', x => this.socket.emit('paxa', { 
                         id: x.id, 
                         alias: this.alias 
                     }))
-                    p.$on('avpaxa', x => avpaxa(x.id))
+                    p.$on('avpaxa', x => this.avpaxa(x))
                     p.$mount()
 
                     if (this.popups[n0llan.id]) {
