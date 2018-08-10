@@ -13,43 +13,64 @@
 </head>
 <body>
     <div id="application" class="application cerise">
-    <div id="methone-container-replace"></div>
-    <script type="text/javascript">
-        window.methone_conf = {
-            system_name: "Pax",
-            color_scheme: "cerise",
-            login_text: "Ladda om",
-            login_href: "/",
-            links: []
-        }
-    </script>
-    <script src="//methone.datasektionen.se/bar.js"></script>
-    
-    <div id="a">
-        <div id="list">
-            <h2>Dina nØllan</h2>
-            <ul>
-                <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && n.paxad.emails === userEmail)">
-                    <button class="paxa" @click="socket.emit('avpaxa', { id: person.id })">Avpaxa</button>
-                    <h1 v-html="person.name"></h1>
-                    <a title="Google Maps" target="_blank" v-bind:href="'https://www.google.com/maps/place/' + person.rawAddress.street + ',+' + person.rawAddress.zip + '+' + person.rawAddress.city" class="address">
-                        <i class="fa fa-crosshairs"></i>
-                        <span v-html="person.rawAddress.street"></span><br>
-                        <span v-html="person.rawAddress.zip"></span>
-                        <span v-html="person.rawAddress.city"></span>
-                    </a>
-                </li>
-                <li v-if="Object.keys(n0llan).length === 0">
-                    <h2 style="text-align: center">Paxa nØllan genom att hitta dem på kartan till höger</h2>
-                </li>
-            </ul>
+        <div id="methone-container-replace"></div>
+        <script type="text/javascript">
+            window.methone_conf = {
+                system_name: "Pax",
+                color_scheme: "cerise",
+                login_text: "Ladda om",
+                login_href: "/",
+                links: []
+            }
+        </script>
+        <script src="//methone.datasektionen.se/bar.js"></script>
+        
+        <div id="a">
+            <div id="profile" v-if="state !== 0 && state !== 2">
+                Paxar som <b v-html="alias || userEmail"></b><br>
+                <button class="paxa" @click="state = 2; alias = ''">Byt alias</button>
+            </div>
+            <div id="list" v-if="state !== 0 && state !== 2">
+                <h2>Dina nØllan, <b v-html="alias || userEmail"></b></h2>
+                <ul>
+                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && (n.paxad.emails === userEmail || n.paxad.alias === alias))">
+                        <button class="paxa" @click="avpaxa(person)">Avpaxa</button>
+                        <h1 v-html="person.name"></h1>
+                        <a title="Google Maps" target="_blank" v-bind:href="'https://www.google.com/maps/place/' + person.rawAddress.street + ',+' + person.rawAddress.zip + '+' + person.rawAddress.city" class="address">
+                            <i class="fa fa-crosshairs"></i>
+                            <span v-html="person.rawAddress.street"></span><br>
+                            <span v-html="person.rawAddress.zip"></span>
+                            <span v-html="person.rawAddress.city"></span>
+                        </a>
+                    </li>
+                    <li v-if="Object.keys(n0llan).length === 0">
+                        <h2 style="text-align: center">Paxa nØllan genom att hitta dem på kartan till höger</h2>
+                    </li>
+                </ul>
+            </div>
+            <div class="overlay" v-if="state === 0">
+                <div class="dialog">
+                    <h3>Hur vill du paxa?</h3>
+                    <button @click="state = 1">Med KTH-kontot <span v-html="userEmail"></span></button>
+                    <button @click="state = 2">Med ett alias</button>
+                </div>
+            </div>
+            <div class="overlay" v-if="state === 2">
+                <div class="dialog">
+                    <h3>Ange ett alias</h3>
+                    <input type="text" v-model="alias" @keypress.enter="state = 3" />
+                    <button @click="state = 3">Starta!</button>
+                </div>
+            </div>
         </div>
     </div>
-    </div>
+
+
     <div style="padding-top:50px;height:100%;margin-top:-50px;">
         <div id="map"></div>
     </div>
-    <script type="text/x-template" id="popup-template">
+
+    <template id="popup-container">
         <div class="popup">
             <h2 v-html="n0llan.name"></h2>
             <p class="address">
@@ -59,37 +80,34 @@
             </p>
             <button v-if="!n0llan.paxad" class="paxa" @click="paxa">Paxa</button>
             <button v-if="n0llan.paxad && n0llan.paxad.emails === userEmail" class="paxa" @click="avpaxa">Avpaxa</button>
-            <p class="paxare" v-if="n0llan.paxad" v-html="'Paxad av ' + n0llan.paxad.first_name + ' ' + n0llan.paxad.last_name"></p>
+            <p class="paxare" v-if="n0llan.paxad" v-html="'Paxad av ' + (n0llan.paxad.alias || (n0llan.paxad.first_name + ' ' + n0llan.paxad.last_name))"></p>
         </div>
-    </script>
+    </template>
+
     <script>
-        window.PopupContainer = Vue.component('PopupContainer', {
+        window.PopupContainer = Vue.component('popup-container', {
             data() {
                 return {
                     userEmail: '',
                     n0llan: {}
                 }
             },
-            created() {
-                console.log('created')
-            },
             methods: {
                 paxa: function() {
                     this.$emit('paxa', this.n0llan)
-                    console.log('paxa')
                 },
                 avpaxa: function() {
                     this.$emit('avpaxa', this.n0llan)
-                    console.log('avpaxa')
                 }
             },
-            template: '#popup-template'
+            template: '#popup-container'
         })
 
         const app = new Vue({
             el: '#a',
             data: {
                 n0llan: {},
+                alias: undefined,
                 userEmail: '',
                 socket: io({
                     query: {
@@ -98,7 +116,8 @@
                 }),
                 map: undefined, 
                 popups: {},
-                markers: {} 
+                markers: {},
+                state: 0
             },
             created: function() {
                 this.socket.on('error', a => console.error(a))
@@ -120,29 +139,36 @@
                         this.update(n0llan)
                     })
                 })
-                this.socket.on('update', n0llan => {
-                    this.update(n0llan)
-                })
+                this.socket.on('update', n0llan => this.update(n0llan))
             },
             methods: {
+                avpaxa: function (n0llis) {
+                    this.socket.emit('avpaxa', { 
+                        id: n0llis.id, 
+                        alias: this.alias 
+                    })
+                },
                 update: function (n0llan) {
                     console.log("Updating", n0llan)
 
                     // Calculate position
-                    const coordinates = n0llan.coordinates.longitude && n0llan.coordinates.latitude ? [n0llan.coordinates.longitude, n0llan.coordinates.latitude] : n0llan.addresses[n0llan.index || 0].center
+                    const coordinates = [n0llan.coordinates.longitude, n0llan.coordinates.latitude]
 
                     const n = this.n0llan
                     n[n0llan.id] = n0llan
                     this.n0llan = n
                     this.$forceUpdate()
-                    console.log(this.n0llan)
+
                     const markerColor = (n0llan) => !n0llan.paxad ? '#ee2a7b' : '#dddddd'
 
                     const p = new window.PopupContainer()
                     p.n0llan = n0llan
                     p.userEmail = this.userEmail
-                    p.$on('paxa', x => this.socket.emit('paxa', { id: x.id }))
-                    p.$on('avpaxa', x => this.socket.emit('avpaxa', { id: x.id }))
+                    p.$on('paxa', x => this.socket.emit('paxa', { 
+                        id: x.id, 
+                        alias: this.alias 
+                    }))
+                    p.$on('avpaxa', x => avpaxa(x.id))
                     p.$mount()
 
                     if (this.popups[n0llan.id]) {
@@ -152,20 +178,17 @@
                     }
 
                     if (this.markers[n0llan.id]) {
-                        this.markers[n0llan.id]
-                        .setLngLat(coordinates)
+                        this.markers[n0llan.id].setLngLat(coordinates)
                         this.markers[n0llan.id].getElement()
-                        .childNodes[0]
-                        .childNodes[0]
-                        .childNodes[1]
-                        .setAttributeNS(null, 'fill', markerColor(n0llan))
+                            .childNodes[0].childNodes[0].childNodes[1]
+                            .setAttributeNS(null, 'fill', markerColor(n0llan))
                     } else {
                         this.markers[n0llan.id] = new mapboxgl.Marker({
                             color: markerColor(n0llan)
                         })
-                        .setLngLat(coordinates)
-                        .setPopup(this.popups[n0llan.id])
-                        .addTo(this.map)
+                            .setLngLat(coordinates)
+                            .setPopup(this.popups[n0llan.id])
+                            .addTo(this.map)
                     }
                 }
             }

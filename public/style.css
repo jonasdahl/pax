@@ -101,3 +101,68 @@ ul {
 	color: #fff;
 	float: right;
 }
+.overlay {
+	background: rgba(0,0,0,0.7);
+	position: fixed;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	z-index: 2;
+}
+.dialog {
+	position: fixed;
+	left: 50%;
+	right: 50%;
+	top: 50%;
+	bottom: 50%;
+	margin: -100px -300px;
+	background: #fff;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	border-radius: 3px;
+	padding: 20px;
+	z-index: 3;
+	text-align: center;
+}
+.dialog h3 {
+	font-size: 25px;
+	font-weight: bold;
+}
+.dialog button {
+	background: #ee2a7b;
+	color: #fff;
+}
+.dialog input {
+	background: #fff;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	border: 1px solid #ddd;
+	padding: 10px;
+	margin: 3px auto 10px;
+	display: block;
+	text-align: center;
+}
+
+#profile {
+	position: fixed;
+	right: 10px;
+	top: 60px;
+	background: #fff;
+	padding: 20px;
+	font-size: 1.25em;
+	z-index: 1;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+	border-radius: 3px;
+	text-align: center;
+}
+#profile button {
+	display: inline-block;
+	margin-top: 10px;
+	background: #ee2a7b !important;
+	color: #fff;
+}
+
+
+
+
+
+

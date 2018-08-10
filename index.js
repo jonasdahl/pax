@@ -32,37 +32,25 @@ const STON_URL = 'https://ston.datasektionen.se'
     const data = await res.json()
 
     for (const n0llan of data) {
-      //https://github.com/mapbox/mapbox-sdk-js/blob/master/docs/services.md#forwardgeocode
-      if (!n0llan.street) {
-        continue;
-      }
-
-      let body
-      if (!n0llan.longitude || !n0llan.latitude) {
-        moreinfo = true
-        const result = await geoClient.forwardGeocode({
-          query: n0llan.street,
-          proximity: [ 59.348135, 18.071440 ],
-          types: [ 'address' ]
-        }).send()
-        body = result.body
-        console.log(body.features)
-      }
-
       pax.update(
-        { id: n0llan.id },
-        { $set: {
+        { 
+          id: n0llan.id 
+        },
+        { 
+          $set: {
             name: n0llan.name,
-            rawAddress: {
-              street: n0llan.street,
-              city: n0llan.city,
-              zip: n0llan.zip
-            },
             coordinates: {
               longitude: n0llan.longitude,
               latitude: n0llan.latitude
             },
-            addresses: body ? body.features : undefined,
+            rawAddress: {
+              street: n0llan.street,
+              zip: n0llan.zip,
+              city: n0llan.city,
+            },
+          },
+          $unset: {
+            addresses: true
           }
         },
         { upsert: true }
@@ -123,32 +111,41 @@ io.use((socket, next) => {
         socket.emit('n0llan', n0llan)
       })
 
-      socket.on('fixa', async ({ id, ...rest }) => {
-        await pax.update(
-          { id },
-          { $set: rest }
-        )
-
-        // broadcast an update
-        io.emit('update', await pax.findOne({ id }))
-      })
-
-      socket.on('paxa', async ({ id }) => {
-        const { paxad } = await pax.findOne({id})
-        if(paxad) {
+      socket.on('paxa', async ({ id, alias }) => {
+        const { paxad } = await pax.findOne({id: parseInt(id)})
+        if (paxad) {
           socket.emit('ERROR', 'Redan paxad!')
           return
         }
 
         await pax.update(
           { id },
-          { $set: { paxad: socket.user } }
+          { 
+            $set: { 
+              paxad: alias ? { alias } : socket.user
+            } 
+          }
         )
 
         io.emit('update', await pax.findOne({ id }))
       })
 
-      socket.on('avpaxa', async ({ id }) => {
+      socket.on('avpaxa', async ({ id, alias }) => {
+        console.log('avpaxar', parseInt(id))
+        console.log(alias)
+        const x = await pax.findOne({id: parseInt(id)})
+        console.log(x)
+        const paxad = x.paxad
+        if (!paxad) {
+          socket.emit('ERROR', 'Det finns ju ingen som har paxat den där nØllanen')
+          return
+        }
+
+        if (paxad.alias !== alias && paxad.emails !== socket.user.emails) {
+          socket.emit('ERROR', 'Du kan ju för fan inte avpaxa någon annans')
+          return
+        }
+
         await pax.update(
           { id },
           { $unset: { paxad: '' } }
@@ -160,7 +157,7 @@ io.use((socket, next) => {
       socket.on('disconnect', () => client.close())
     } catch(err) {
       console.error(err)
-      socket.emit('error', err)
+      socket.emit('ERROR', err)
     }
 })
 
