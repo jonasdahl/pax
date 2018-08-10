@@ -65,6 +65,13 @@ const STON_URL = 'https://ston.datasektionen.se'
   }
 })()
 
+app.use('*', (req, res, next) => {  
+  if (process.env.NODE_ENV === 'production' && req.protocol === 'http') {
+    res.redirect('https://' + req.headers.host + req.url);
+  }
+  next()
+})
+
 app.use(/\/$/, (req, res, next) => {
   if(req.query.token) {
     fetch(`${LOGIN_URL}/verify/${req.query.token}.json?api_key=${process.env.LOGIN_API_KEY}`)
