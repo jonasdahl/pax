@@ -27,7 +27,7 @@
                 <h2>Dina nØllan, <b v-html="alias || userEmail"></b></h2>
                 <button class="close-button" @click="menuExpanded = !menuExpanded"><i class="fa fa-chevron-down"></i></button>
                 <ul>
-                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && ((n.paxad.emails === userEmail && !alias) || (alias && n.paxad.alias === alias)))">
+                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && ((!alias && userEmail && n.paxad.emails === userEmail && state === 1) || (alias && n.paxad.alias === alias && state === 3)))">
                         <button class="paxa" @click="avpaxa(person)">Avpaxa</button>
                         <h1 v-html="person.name"></h1>
                         <a title="Google Maps" target="_blank" v-bind:href="'https://www.google.com/maps/place/' + person.rawAddress.street + ',+' + person.rawAddress.zip + '+' + person.rawAddress.city" class="address">
@@ -129,11 +129,7 @@
 
                     console.log(mapboxgl, map, token)
                 })
-                this.socket.on('n0llan', n0llan => {
-                    n0llan.forEach(n0llan => {
-                        this.update(n0llan)
-                    })
-                })
+                this.socket.on('n0llan', n0llan => n0llan.forEach(n0llan => this.update(n0llan)))
                 this.socket.on('update', n0llan => this.update(n0llan))
             },
             methods: {
