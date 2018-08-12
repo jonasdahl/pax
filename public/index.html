@@ -27,7 +27,7 @@
                 <h2>Dina nØllan, <b v-html="alias || userEmail"></b></h2>
                 <button class="close-button" @click="menuExpanded = !menuExpanded"><i class="fa fa-chevron-down"></i></button>
                 <ul>
-                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && ((n.paxad.emails === userEmail && !alias) || n.paxad.alias === alias))">
+                    <li class="card" v-for="person in Object.keys(n0llan).map(k => n0llan[k]).filter(n => n.paxad && ((n.paxad.emails === userEmail && !alias) || (alias && n.paxad.alias === alias)))">
                         <button class="paxa" @click="avpaxa(person)">Avpaxa</button>
                         <h1 v-html="person.name"></h1>
                         <a title="Google Maps" target="_blank" v-bind:href="'https://www.google.com/maps/place/' + person.rawAddress.street + ',+' + person.rawAddress.zip + '+' + person.rawAddress.city" class="address">
@@ -72,7 +72,7 @@
                 <span v-html="n0llan.rawAddress.city"></span>
             </p>
             <button v-if="!n0llan.paxad" class="paxa" @click="paxa">Paxa</button>
-            <button v-if="false || (n0llan.paxad && ((n0llan.paxad.emails === userEmail && !alias) || n0llan.paxad.alias === alias))" class="paxa" @click="avpaxa">Avpaxa</button>
+            <button v-if="false || (n0llan.paxad && ((n0llan.paxad.emails === userEmail && !alias) || (alias && n0llan.paxad.alias === alias)))" class="paxa" @click="avpaxa">Avpaxa</button>
             <p class="paxare" v-if="n0llan.paxad" v-html="'Paxad av ' + (n0llan.paxad.alias || (n0llan.paxad.first_name + ' ' + n0llan.paxad.last_name))"></p>
         </div>
     </template>
